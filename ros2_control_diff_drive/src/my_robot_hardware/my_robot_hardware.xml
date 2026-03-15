@@ -1,0 +1,13 @@
+<library path="my_robot_hardware">
+  <class
+    name="my_robot_hardware/MicroRosHardware"
+    type="my_robot_hardware::MicroRosHardware"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface plugin for a differential drive robot
+      controlled via micro-ROS over UART. Subscribes to /joint_states from
+      the ESP32 and publishes /cmd_vel to command wheel velocities.
+    </description>
+  </class>
+</library>
+ 

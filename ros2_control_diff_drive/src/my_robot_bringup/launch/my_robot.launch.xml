@@ -1,0 +1,58 @@
+<launch>
+
+    <!--
+    =====================================================================
+    BEFORE running this launch file, start the micro-ROS agent in a
+    separate terminal:
+
+      ros2 run micro_ros_agent micro_ros_agent serial \
+        - -dev /dev/ttyUSB0 - -baudrate 576000
+
+    The agent must be running and the ESP32 must be connected and powered
+    before this launch file is started. The hardware interface will
+    activate and begin subscribing to /joint_states immediately on launch.
+    If the agent is not running, the robot will not move and odometry
+    will stay at zero — no crash, just no data.
+    =====================================================================
+    -->
+
+    <let name="urdf_path"
+         value="$(find-pkg-share my_robot_description)/urdf/my_robot.urdf.xacro"/>
+
+    <let name="rviz_config_path"
+         value="$(find-pkg-share my_robot_description)/rviz/urdf_config.rviz"/>
+
+    <!-- Publishes the robot URDF to /robot_description and broadcasts
+         static transforms for all fixed joints (e.g. base to caster). -->
+    <node pkg="robot_state_publisher" exec="robot_state_publisher">
+        <param name="robot_description"
+               value="$(command 'xacro $(var urdf_path)')"/>
+    </node>
+
+    <!-- The ros2_control node loads the hardware plugin (our
+         MicroRosHardware) and runs the 50 Hz control loop.
+         This is the node that will call read() and write() on our plugin. -->
+    <node pkg="controller_manager" exec="ros2_control_node" output="screen">
+        <param name="robot_description"
+               value="$(command 'xacro $(var urdf_path)')"/>
+        <param from="$(find-pkg-share my_robot_bringup)/config/my_robot_controllers.yaml"/>
+    </node>
+
+    <!-- Spawns the JointStateBroadcaster — reads position/velocity states
+         from ros2_control and republishes them as /joint_states so
+         robot_state_publisher can animate the wheel joints in RViz. -->
+    <node pkg="controller_manager" exec="spawner"
+          args="joint_state_broadcaster --controller-manager /controller_manager"/>
+
+    <!-- Spawns the DiffDriveController — takes /diff_drive_controller/cmd_vel,
+         computes per-wheel velocity commands, reads wheel states, and
+         publishes /odom and the odom->base_footprint TF. -->
+    <node pkg="controller_manager" exec="spawner"
+          args="diff_drive_controller --controller-manager /controller_manager"/>
+
+    <!-- RViz for visualisation. Remove this line if running headless
+         (e.g. on a Raspberry Pi without a display). -->
+    <node pkg="rviz2" exec="rviz2"
+          args="-d $(var rviz_config_path)"/>
+
+</launch>

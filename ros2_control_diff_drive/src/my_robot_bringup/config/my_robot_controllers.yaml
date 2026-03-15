@@ -1,0 +1,29 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 50
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+
+diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["base_left_wheel_joint"]
+    right_wheel_names: ["base_right_wheel_joint"]
+
+    wheel_separation: 0.49    # metres — measure your actual robot
+    wheel_radius: 0.075       # metres — must match robot_config.h WHEEL_RADIUS_M
+
+    odom_frame_id: "odom"
+    base_frame_id: "base_footprint"
+
+    pose_covariance_diagonal:  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+
+    enable_odom_tf: true
+    publish_rate: 50.0
+
+    use_stamped_vel: false

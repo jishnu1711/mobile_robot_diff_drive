@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Dimensions -->
+  <xacro:property name="base_length" value="0.69"/>
+  <xacro:property name="base_width"  value="0.45"/>
+  <xacro:property name="base_height" value="0.20"/>
+  <xacro:property name="base_mass"   value="8.0"/>
+
+  <xacro:property name="wheel_radius" value="0.075"/>
+  <xacro:property name="wheel_width"  value="0.04"/>
+  <xacro:property name="wheel_mass"   value="0.5"/>
+
+  <xacro:property name="base_clearance"    value="0.02"/>
+  <xacro:property name="support_radius"    value="0.025"/>
+  <xacro:property name="support_mass"      value="0.08"/>
+  <xacro:property name="support_x_offset"  value="0.18"/>
+  <xacro:property name="support_hover"     value="0.002"/>
+
+  <xacro:property name="lidar_radius"         value="0.04"/>
+  <xacro:property name="lidar_height"         value="0.05"/>
+  <xacro:property name="lidar_mass"           value="0.3"/>
+  <xacro:property name="front_marker_radius"  value="0.03"/>
+  <xacro:property name="front_marker_x"       value="${base_length / 2.0 - 0.07}"/>
+
+  <!-- Derived values -->
+  <xacro:property name="base_z"          value="${base_clearance + base_height / 2.0}"/>
+  <xacro:property name="wheel_joint_z"   value="${wheel_radius - base_z}"/>
+  <xacro:property name="support_joint_z" value="${support_radius + support_hover - base_z}"/>
+
+  <!-- Inertia macros -->
+  <xacro:macro name="box_inertia" params="m x y z">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+        ixx="${(1.0/12.0)*m*(y*y+z*z)}" ixy="0" ixz="0"
+        iyy="${(1.0/12.0)*m*(x*x+z*z)}" iyz="0"
+        izz="${(1.0/12.0)*m*(x*x+y*y)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="m r l">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+        ixx="${(1.0/12.0)*m*(3*r*r+l*l)}" ixy="0" ixz="0"
+        iyy="${(1.0/12.0)*m*(3*r*r+l*l)}" iyz="0"
+        izz="${0.5*m*r*r}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="sphere_inertia" params="m r">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+        ixx="${(2.0/5.0)*m*r*r}" ixy="0" ixz="0"
+        iyy="${(2.0/5.0)*m*r*r}" iyz="0"
+        izz="${(2.0/5.0)*m*r*r}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Base footprint -->
+  <link name="base_footprint"/>
+
+  <!-- Base link -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <visual>
+      <origin xyz="${front_marker_x} 0 ${base_height/2.0}" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="${front_marker_radius}"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertia m="${base_mass}" x="${base_length}" y="${base_width}" z="${base_height}"/>
+  </link>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${base_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Left wheel -->
+  <link name="left_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry>
+        <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry>
+        <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}" l="${wheel_width}"/>
+  </link>
+
+  <joint name="base_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <origin xyz="0 ${base_width/2.0 + wheel_width/2.0} ${wheel_joint_z}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Right wheel -->
+  <link name="right_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry>
+        <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry>
+        <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}" l="${wheel_width}"/>
+  </link>
+
+  <joint name="base_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <origin xyz="0 ${-(base_width/2.0 + wheel_width/2.0)} ${wheel_joint_z}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Front passive support -->
+  <link name="front_support_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="${support_radius}"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="${support_radius}"/></geometry>
+    </collision>
+    <xacro:sphere_inertia m="${support_mass}" r="${support_radius}"/>
+  </link>
+
+  <joint name="front_support_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_support_link"/>
+    <origin xyz="${support_x_offset} 0 ${support_joint_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Rear passive support -->
+  <link name="rear_support_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="${support_radius}"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="${support_radius}"/></geometry>
+    </collision>
+    <xacro:sphere_inertia m="${support_mass}" r="${support_radius}"/>
+  </link>
+
+  <joint name="rear_support_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rear_support_link"/>
+    <origin xyz="${-support_x_offset} 0 ${support_joint_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- LiDAR -->
+  <link name="laser">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_inertia m="${lidar_mass}" r="${lidar_radius}" l="${lidar_height}"/>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser"/>
+    <origin xyz="0 0 ${base_height/2.0 + lidar_height/2.0 + 0.05}" rpy="0 0 0"/>
+  </joint>
+
+</robot>
